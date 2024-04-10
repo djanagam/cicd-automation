@@ -1,0 +1,12 @@
+Certainly! When running Jenkins on the JVM, especially with Java 17 and the Z Garbage Collector (ZGC), you'll want to configure some JVM options for optimal performance and garbage collection.Here are some recommended JVM options for running CloudBees Jenkins with Java 17 and ZGC:java -Xmx4g \
+     -Xms4g \
+     -XX:+UseZGC \
+     -XX:ZUncommitDelay=5 \
+     -XX:SoftRefLRUPolicyMSPerMB=1 \
+     -Djava.awt.headless=true \
+     -Djenkins.install.runSetupWizard=false \
+     -Dhudson.model.ParametersAction.keepUndefinedParameters=true \
+     -Dorg.apache.commons.jelly.tags.fmt.timeZone=America/New_York \
+     -jar jenkins.war \
+     --httpPort=8080
+Explanation of the options:-Xmx4g: Sets the maximum heap size to 4GB.-Xms4g: Sets the initial heap size to 4GB.-XX:+UseZGC: Enables the Z Garbage Collector.-XX:ZUncommitDelay=5: Sets the delay before uncommitting unused memory.-XX:SoftRefLRUPolicyMSPerMB=1: Controls the eviction policy for soft references.-Djava.awt.headless=true: Enables headless mode, which is recommended for servers.-Djenkins.install.runSetupWizard=false: Disables the setup wizard during Jenkins installation.-Dhudson.model.ParametersAction.keepUndefinedParameters=true: Keeps undefined parameters in Jenkins.-Dorg.apache.commons.jelly.tags.fmt.timeZone=America/New_York: Sets the default time zone.--httpPort=8080: Sets the HTTP port for Jenkins to 8080.Adjust the heap size (-Xmx and -Xms) based on your system's available memory. The Z Garbage Collector is designed to handle large heap sizes efficiently, but it's still a good idea to monitor the GC behavior and adjust the options as needed.Make sure to test these options in a staging environment before applying them to production to ensure they work well with your specific workload and system configuration.
