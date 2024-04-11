@@ -1,0 +1,4 @@
+$fileContent = Get-Content -Path 'path\to\your\file.yaml' -Raw
+$jsonContent = $fileContent -replace "'", '"' -replace ':', ': ' -replace '^(\w+):', '"$1":'
+$yamlObject = $jsonContent | ConvertFrom-Json
+$idValue = $yamlObject.Central.Id
