@@ -1,0 +1,35 @@
+Hostname "your-hostname"
+
+LoadPlugin cpu
+LoadPlugin memory
+LoadPlugin write_http
+LoadPlugin network
+LoadPlugin load
+
+<Plugin cpu>
+  ReportByCpu true
+</Plugin>
+
+<Plugin memory>
+  ValuesAbsolute true
+</Plugin>
+
+<Plugin write_http>
+  <Node "splunk">
+    URL "https://your-splunk-hec-server:8088/services/collector"
+    Format "JSON"
+    Header "Authorization" "Splunk your-hec-token"
+    Header "Content-Type" "application/json"
+    StoreRates true
+    Timeout 10
+    VerifyPeer false
+  </Node>
+</Plugin>
+
+<Plugin network>
+  Server "your-collectd-server" "25826"
+</Plugin>
+
+<Plugin load>
+  ReportRelative true
+</Plugin>
