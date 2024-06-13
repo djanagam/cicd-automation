@@ -12,18 +12,18 @@ def scriptApproval = ScriptApproval.get()
 // Function to approve a script
 def approveScript(PendingScript pendingScript) {
     try {
-        scriptApproval.approveScript(pendingScript.getHash())
-        println("Approved script: ${pendingScript.getScript()}")
+        scriptApproval.approveScript(pendingScript.hash)
+        println("Approved script: ${pendingScript.script}")
     } catch (Exception e) {
-        println("Failed to approve script: ${pendingScript.getScript()}")
+        println("Failed to approve script: ${pendingScript.script}")
         e.printStackTrace()
     }
 }
 
 // Iterate through pending scripts and approve those matching the pattern or user
 scriptApproval.getPendingScripts().each { pendingScript ->
-    def script = pendingScript.getScript()
-    def userName = pendingScript.getUser()
+    def script = pendingScript.script
+    def userName = pendingScript.getContext()?.getUser()?.getId() // Adjusting the method to get user ID
 
     if (script.contains(pattern) || userName == user) {
         approveScript(pendingScript)
@@ -31,3 +31,4 @@ scriptApproval.getPendingScripts().each { pendingScript ->
 }
 
 println("Script approval process completed.")
+
