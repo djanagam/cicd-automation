@@ -1,0 +1,1 @@
+find . -type f -exec sed -i 's/\[\s*self-hosted,\s*/[ /g; s/,\s*self-hosted\s*/ /g; s/self-hosted,\s*/ /g; s/self-hosted\s*/ /g' {} +
