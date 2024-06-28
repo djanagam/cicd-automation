@@ -4,16 +4,19 @@ $orgName = "your-org-name"
 # Number of repositories per page
 $perPage = 100
 
-# Initialize page number
+# Initialize variables
 $page = 1
-
-# Initialize an array to store all repository names
 $repos = @()
 
-# Fetch all repositories in the organization
+# Function to fetch repositories for a specific page
+function FetchRepositories($orgName, $perPage, $page) {
+    $repos = gh repo list $orgName --limit $perPage --json name --jq '.[].name'
+    return $repos
+}
+
+# Fetch repositories until all are fetched
 do {
-    # Fetch repositories for the current page
-    $currentRepos = gh repo list $orgName --limit $perPage --page $page --json name --jq '.[].name'
+    $currentRepos = FetchRepositories $orgName $perPage $page
     
     if ($currentRepos) {
         $repos += $currentRepos
