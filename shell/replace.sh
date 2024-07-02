@@ -1,5 +1,7 @@
 #!/bin/bash
 
+sed -i 's/\(^\|[^a-zA-Z0-9_-]\)Ubuntu-latest\([^a-zA-Z0-9_-]\|$\)/\1Ubuntu-latest-medium\2/g' yourfile.txt
+
 # Define the file containing the string replacements
 replacements_file="replacements.txt"
 
