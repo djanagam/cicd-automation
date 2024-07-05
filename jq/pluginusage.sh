@@ -6,3 +6,10 @@ jq -r '
                [$shortname, $controllerurl, $url])
   | @csv
 ' data.json
+
+
+jq -r '
+  ["Shortname", "Controllerurl", "url"],
+  (.Usages[] | .[] | [.plugininfo.Shortname, .Location.Controllerurl, .Location.url])
+  | @csv
+' data.json > report.csv
