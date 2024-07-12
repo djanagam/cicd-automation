@@ -1,3 +1,58 @@
+To support alias names for namespaces as well, you can extend your `inventory.yaml` file to include aliases for each namespace and update the script to resolve namespace aliases.
+
+### Step 1: Update Inventory File
+
+Include aliases for namespaces in the `inventory.yaml`:
+
+```yaml
+clusters:
+  - name: cluster1
+    alias: alias1
+    api: api.cluster1.example.com
+    namespaces:
+      - name: namespace1
+        alias: ns1
+      - name: namespace2
+        alias: ns2
+      - name: namespace3
+        alias: ns3
+  - name: cluster2
+    alias: alias2
+    api: api.cluster2.example.com
+    namespaces:
+      - name: namespace1
+        alias: ns1
+      - name: namespace2
+        alias: ns2
+      - name: namespace3
+        alias: ns3
+  - name: cluster3
+    alias: alias3
+    api: api.cluster3.example.com
+    namespaces:
+      - name: namespace1
+        alias: ns1
+      - name: namespace2
+        alias: ns2
+      - name: namespace3
+        alias: ns3
+  - name: cluster4
+    alias: alias4
+    api: api.cluster4.example.com
+    namespaces:
+      - name: namespace1
+        alias: ns1
+      - name: namespace2
+        alias: ns2
+      - name: namespace3
+        alias: ns3
+```
+
+### Step 2: Update the Utility Script
+
+Modify the script to use the namespace aliases:
+
+```bash
 #!/bin/bash
 
 # Define the path to your inventory file and YAML file
@@ -137,3 +192,45 @@ main() {
 }
 
 main "$@"
+```
+
+### Steps to Use the Script
+1. **Save the Inventory File**: Save the `inventory.yaml` file with your clusters, APIs, and namespaces.
+2. **Save the Script**: Save the script to a file, e.g., `k8s_utility.sh`.
+3. **Make the Script Executable**:
+   ```sh
+   chmod +x k8s_utility.sh
+   ```
+
+### Running the Script
+
+#### Apply Configuration to Specific Namespaces Using Aliases
+To apply a configuration file to specific namespaces in a cluster using namespace aliases:
+```sh
+./k8s_utility.sh apply-config alias1 path/to/your/secret.yaml ns1 ns2
+```
+
+To apply a configuration file to all namespaces in a cluster using the cluster alias:
+```sh
+./k8s_utility.sh apply-config alias1 path/to/your/secret.yaml
+```
+
+#### Run Kubectl Command in Specific Namespaces Using Aliases
+To run a kubectl command in specific namespaces in a cluster using namespace aliases:
+```sh
+./k8s_utility.sh run-command alias1 get pods ns1 ns2
+```
+
+To run a kubectl command in all namespaces in a cluster using the cluster alias:
+```sh
+./k8s_utility.sh run-command alias1 get pods
+```
+
+### Notes
+- **Cluster Alias Argument**: The script now takes the cluster alias as an argument. Ensure you provide the correct cluster alias when running the script.
+- **Namespace Alias Argument**: The script can now take namespace aliases as arguments.
+- **Inventory File Path**: Ensure the `inventory_file` variable in the script points to the actual path of your `inventory.yaml` file.
+- **PKS Credentials**: Update the `pks_user` variable with your actual PKS username.
+- **Error Handling**: The script includes basic error handling to check if the `pks get-kubeconfig` and `kubectl apply` or `kubectl` commands succeed and logs an error message if they fail.
+
+This enhanced script allows you to use alias names for both clusters and namespaces, making it easier to reference clusters and namespaces in your commands.
