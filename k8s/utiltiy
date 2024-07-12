@@ -1,42 +1,3 @@
-To enhance the utility script so that you can apply configurations or run commands on specific namespaces within a cluster, you can modify the script to accept optional namespace arguments. This allows you to specify one or more namespaces to target within the selected cluster.
-
-### Step 1: Update Inventory File
-
-Ensure your `inventory.yaml` file is structured as before:
-
-```yaml
-clusters:
-  - name: cluster1
-    api: api.cluster1.example.com
-    namespaces:
-      - namespace1
-      - namespace2
-      - namespace3
-  - name: cluster2
-    api: api.cluster2.example.com
-    namespaces:
-      - namespace1
-      - namespace2
-      - namespace3
-  - name: cluster3
-    api: api.cluster3.example.com
-    namespaces:
-      - namespace1
-      - namespace2
-      - namespace3
-  - name: cluster4
-    api: api.cluster4.example.com
-    namespaces:
-      - namespace1
-      - namespace2
-      - namespace3
-```
-
-### Step 2: Update the Utility Script
-
-Update your script to allow specifying namespaces as optional arguments:
-
-```bash
 #!/bin/bash
 
 # Define the path to your inventory file and YAML file
@@ -62,17 +23,21 @@ apply_config() {
   local cluster="$1"
   local yaml_file="$2"
   shift 2
-  local target_namespaces=("$@")
+  local target_namespace_aliases=("$@")
 
   # Get the PKS API endpoint for the target cluster
   pks_api=$(yq e ".clusters[] | select(.name == \"$cluster\") | .api" "$inventory_file")
 
   login_to_cluster "$cluster" "$pks_api"
 
-  if [ ${#target_namespaces[@]} -eq 0 ]; then
-    namespaces=$(yq e ".clusters[] | select(.name == \"$cluster\") | .namespaces[]" "$inventory_file")
+  if [ ${#target_namespace_aliases[@]} -eq 0 ]; then
+    namespaces=$(yq e ".clusters[] | select(.name == \"$cluster\") | .namespaces[].name" "$inventory_file")
   else
-    namespaces="${target_namespaces[@]}"
+    namespaces=()
+    for alias in "${target_namespace_aliases[@]}"; do
+      namespace=$(yq e ".clusters[] | select(.name == \"$cluster\") | .namespaces[] | select(.alias == \"$alias\") | .name" "$inventory_file")
+      namespaces+=("$namespace")
+    done
   fi
 
   for namespace in $namespaces; do
@@ -92,17 +57,21 @@ run_kubectl_command() {
   local cluster="$1"
   local kubectl_command="$2"
   shift 2
-  local target_namespaces=("$@")
+  local target_namespace_aliases=("$@")
 
   # Get the PKS API endpoint for the target cluster
   pks_api=$(yq e ".clusters[] | select(.name == \"$cluster\") | .api" "$inventory_file")
 
   login_to_cluster "$cluster" "$pks_api"
 
-  if [ ${#target_namespaces[@]} -eq 0 ]; then
-    namespaces=$(yq e ".clusters[] | select(.name == \"$cluster\") | .namespaces[]" "$inventory_file")
+  if [ ${#target_namespace_aliases[@]} -eq 0 ]; then
+    namespaces=$(yq e ".clusters[] | select(.name == \"$cluster\") | .namespaces[].name" "$inventory_file")
   else
-    namespaces="${target_namespaces[@]}"
+    namespaces=()
+    for alias in "${target_namespace_aliases[@]}"; do
+      namespace=$(yq e ".clusters[] | select(.name == \"$cluster\") | .namespaces[] | select(.alias == \"$alias\") | .name" "$inventory_file")
+      namespaces+=("$namespace")
+    done
   fi
 
   for namespace in $namespaces; do
@@ -117,21 +86,33 @@ run_kubectl_command() {
   echo "Kubectl command executed in specified namespaces in cluster: $cluster."
 }
 
+# Function to get the cluster name by alias
+get_cluster_name_by_alias() {
+  local alias="$1"
+  yq e ".clusters[] | select(.alias == \"$alias\") | .name" "$inventory_file"
+}
+
 # Main function to parse arguments and call the appropriate function
 main() {
   if [ "$#" -lt 2 ]; then
-    echo "Usage: $0 <command> <cluster-name> [additional-args] [namespace...]"
+    echo "Usage: $0 <command> <cluster-alias> [additional-args] [namespace-alias...]"
     exit 1
   fi
 
   local command="$1"
-  local cluster="$2"
+  local cluster_alias="$2"
   shift 2
+
+  local cluster=$(get_cluster_name_by_alias "$cluster_alias")
+  if [ -z "$cluster" ]; then
+    echo "Cluster alias $cluster_alias not found in inventory"
+    exit 1
+  fi
 
   case "$command" in
     apply-config)
       if [ "$#" -lt 1 ]; then
-        echo "Usage: $0 apply-config <cluster-name> <yaml-file> [namespace...]"
+        echo "Usage: $0 apply-config <cluster-alias> <yaml-file> [namespace-alias...]"
         exit 1
       fi
       local yaml_file="$1"
@@ -140,7 +121,7 @@ main() {
       ;;
     run-command)
       if [ "$#" -lt 1 ]; then
-        echo "Usage: $0 run-command <cluster-name> <kubectl-command> [namespace...]"
+        echo "Usage: $0 run-command <cluster-alias> <kubectl-command> [namespace-alias...]"
         exit 1
       fi
       local kubectl_command="$1"
@@ -156,44 +137,3 @@ main() {
 }
 
 main "$@"
-```
-
-### Steps to Use the Script
-1. **Save the Inventory File**: Save the `inventory.yaml` file with your clusters, APIs, and namespaces.
-2. **Save the Script**: Save the script to a file, e.g., `k8s_utility.sh`.
-3. **Make the Script Executable**:
-   ```sh
-   chmod +x k8s_utility.sh
-   ```
-
-### Running the Script
-
-#### Apply Configuration to Specific Namespaces
-To apply a configuration file to specific namespaces in a cluster:
-```sh
-./k8s_utility.sh apply-config cluster1 path/to/your/secret.yaml namespace1 namespace2
-```
-
-To apply a configuration file to all namespaces in a cluster:
-```sh
-./k8s_utility.sh apply-config cluster1 path/to/your/secret.yaml
-```
-
-#### Run Kubectl Command in Specific Namespaces
-To run a kubectl command in specific namespaces in a cluster:
-```sh
-./k8s_utility.sh run-command cluster1 get pods namespace1 namespace2
-```
-
-To run a kubectl command in all namespaces in a cluster:
-```sh
-./k8s_utility.sh run-command cluster1 get pods
-```
-
-### Notes
-- **Cluster Name Argument**: The script now takes the cluster name as an argument. Ensure you provide the correct cluster name when running the script.
-- **Inventory File Path**: Ensure the `inventory_file` variable in the script points to the actual path of your `inventory.yaml` file.
-- **PKS Credentials**: Update the `pks_user` variable with your actual PKS username.
-- **Error Handling**: The script includes basic error handling to check if the `pks get-kubeconfig` and `kubectl apply` or `kubectl` commands succeed and logs an error message if they fail.
-
-This enhanced script allows you to target specific namespaces within a cluster for configuration application or `kubectl` commands, making it more flexible and powerful.
