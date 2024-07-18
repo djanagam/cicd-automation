@@ -16,7 +16,8 @@ if (job == null) {
     } else {
         println "Running builds for job: ${jobName}"
         runningBuilds.each { build ->
-            println "Build #${build.number}, started at ${build.getTimestampString()}"
-        }
+        println "Build #${build.number}, started at ${build.getTimestampString()}"
+        //build.doKill()
+}
     }
 }
