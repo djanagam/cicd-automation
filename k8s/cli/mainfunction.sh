@@ -35,7 +35,7 @@ main() {
       run_kubectl_command "$cluster" "$kubectl_command" "$@"
       ;;
     add-registry)
-      if [ "$#" -lt 2]; then
+      if [ "$#" -lt 2 ]; then
         echo "Usage: $0 add-registry <cluster-alias> <new-registry-json> <secret-name> [namespace-alias...]"
         exit 1
       fi
