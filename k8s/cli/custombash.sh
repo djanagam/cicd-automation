@@ -207,3 +207,4 @@ main() {
       fi
       local new_registry="$1"
      
+    
