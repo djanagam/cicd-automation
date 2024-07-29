@@ -5,7 +5,7 @@ $userDescriptions = @{
     "user3" = "Description for user3"
 }
 
-$emailTo = "recipient@example.com"
+$emailTo = @("recipient1@example.com", "recipient2@example.com", "recipient3@example.com")  # Array of recipient emails
 $emailFrom = "sender@example.com"
 $smtpServer = "smtp.example.com"
 $smtpPort = 25
@@ -18,7 +18,9 @@ function Send-Email {
     )
     $message = New-Object system.net.mail.mailmessage
     $message.from = $emailFrom
-    $message.To.add($emailTo)
+    foreach ($recipient in $emailTo) {
+        $message.To.add($recipient)
+    }
     $message.Subject = $subject
     $message.IsBodyHtml = $true
     $message.Body = $body
