@@ -20,6 +20,7 @@ function Send-Email {
     $message.from = $emailFrom
     $message.To.add($emailTo)
     $message.Subject = $subject
+    $message.IsBodyHtml = $true
     $message.Body = $body
     $smtp = New-Object Net.Mail.SmtpClient($smtpServer, $smtpPort)
     $smtp.Send($message)
@@ -41,22 +42,31 @@ $lockedAccounts = @()
 # Check each account's status
 foreach ($username in $userDescriptions.Keys) {
     $isLocked = Is-AccountLocked -username $username
-    $status = if ($isLocked) { "Locked" } else { "Not Locked" }
+    $status = if ($isLocked) { "<span style='color:red'>LOCKED</span>" } else { "<span style='color:green'>UNLOCKED</span>" }
     $description = $userDescriptions[$username]
-    $report += "$username ($description): $status"
+    $report += "<tr><td>$username</td><td>$description</td><td>$status</td></tr>"
     if ($isLocked) {
         $lockedAccounts += $username
     }
 }
 
-# Join report into a single string
-$reportBody = $report -join "`n"
+# Build HTML email body
+$reportBody = @"
+<html>
+<body>
+    <p>The following accounts have been checked for lock status:</p>
+    <table border='1'>
+        <tr><th>Username</th><th>Description</th><th>Status</th></tr>
+        $($report -join "`n")
+    </table>
+</body>
+</html>
+"@
 
 # Send email if any account is locked
 if ($lockedAccounts.Count -gt 0) {
     $subject = "Account Locked Alert"
-    $body = "The following accounts have been checked for lock status:`n`n$reportBody"
-    Send-Email -subject $subject -body $body
+    Send-Email -subject $subject -body $reportBody
 } else {
     Write-Output "No accounts are locked."
 }
