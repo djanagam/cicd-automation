@@ -37,7 +37,7 @@ function Is-AccountLocked {
 }
 
 # Initialize report
-$report = @()
+$reportRows = @()
 $lockedAccounts = @()
 
 # Check each account's status
@@ -45,7 +45,7 @@ foreach ($username in $userDescriptions.Keys) {
     $isLocked = Is-AccountLocked -username $username
     $status = if ($isLocked) { "<span style='color:red'>LOCKED</span>" } else { "<span style='color:green'>UNLOCKED</span>" }
     $description = $userDescriptions[$username]
-    $report += "<tr><td>$username</td><td>$description</td><td>$status</td></tr>"
+    $reportRows += "<tr><td>$username</td><td>$description</td><td>$status</td></tr>"
     if ($isLocked) {
         $lockedAccounts += $username
     }
@@ -57,9 +57,13 @@ $reportBody = @"
 <html>
 <body>
     <p>The following accounts have been checked for lock status:</p>
-    <table border='1'>
-        <tr><th>Username</th><th>Description</th><th>Status</th></tr>
-        $($report -join "`n")
+    <table border='1' style='border-collapse: collapse;'>
+        <tr>
+            <th style='border: 1px solid black; padding: 8px;'>Username</th>
+            <th style='border: 1px solid black; padding: 8px;'>Description</th>
+            <th style='border: 1px solid black; padding: 8px;'>Status</th>
+        </tr>
+        $($reportRows -join "`n")
     </table>
     <br>
     <p>$genericNote</p>
