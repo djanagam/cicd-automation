@@ -1,5 +1,10 @@
 # Define variables
-$usernames = @("user1", "user2", "user3")  # Add more usernames as needed
+$userDescriptions = @{
+    "user1" = "Description for user1"
+    "user2" = "Description for user2"
+    "user3" = "Description for user3"
+}
+
 $emailTo = "recipient@example.com"
 $emailFrom = "sender@example.com"
 $smtpServer = "smtp.example.com"
@@ -34,10 +39,11 @@ $report = @()
 $lockedAccounts = @()
 
 # Check each account's status
-foreach ($username in $usernames) {
+foreach ($username in $userDescriptions.Keys) {
     $isLocked = Is-AccountLocked -username $username
     $status = if ($isLocked) { "Locked" } else { "Not Locked" }
-    $report += "$username: $status"
+    $description = $userDescriptions[$username]
+    $report += "$username ($description): $status"
     if ($isLocked) {
         $lockedAccounts += $username
     }
