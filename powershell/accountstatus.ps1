@@ -22,6 +22,7 @@ function Send-Email {
     $message.Subject = $subject
     $message.IsBodyHtml = $true
     $message.Body = $body
+    $message.Priority = [System.Net.Mail.MailPriority]::High  # Mark email as important
     $smtp = New-Object Net.Mail.SmtpClient($smtpServer, $smtpPort)
     $smtp.Send($message)
 }
@@ -51,6 +52,7 @@ foreach ($username in $userDescriptions.Keys) {
 }
 
 # Build HTML email body
+$genericNote = "Account locked here is the action to do…"
 $reportBody = @"
 <html>
 <body>
@@ -59,6 +61,8 @@ $reportBody = @"
         <tr><th>Username</th><th>Description</th><th>Status</th></tr>
         $($report -join "`n")
     </table>
+    <br>
+    <p>$genericNote</p>
 </body>
 </html>
 "@
