@@ -36,7 +36,7 @@ function Is-AccountLocked {
     return $user.LockedOut
 }
 
-# Initialize report
+# Initialize variables
 $reportRows = @()
 $lockedAccounts = @()
 
@@ -45,7 +45,7 @@ foreach ($username in $userDescriptions.Keys) {
     $isLocked = Is-AccountLocked -username $username
     $status = if ($isLocked) { "<span style='color:red'>LOCKED</span>" } else { "<span style='color:green'>UNLOCKED</span>" }
     $description = $userDescriptions[$username]
-    $reportRows += "<tr><td>$username</td><td>$description</td><td>$status</td></tr>"
+    $reportRows += "<tr><td style='border: 1px solid black; padding: 8px;'>$username</td><td style='border: 1px solid black; padding: 8px;'>$description</td><td style='border: 1px solid black; padding: 8px;'>$status</td></tr>"
     if ($isLocked) {
         $lockedAccounts += $username
     }
