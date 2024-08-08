@@ -11,6 +11,21 @@ on:
         options:
           - list
           - delete
+      instance-name:
+        description: 'Instance name'
+        required: true
+        default: 'default-instance'
+        type: string
+      org-name:
+        description: 'Organization name'
+        required: true
+        default: 'default-org'
+        type: string
+      repo-name:
+        description: 'Repository name'
+        required: true
+        default: 'default-repo'
+        type: string
 
 jobs:
   manage-keys:
@@ -23,7 +38,7 @@ jobs:
         if: ${{ github.event.inputs.action == 'list' }}
         id: list-keys
         run: |
-          ./list_keys.sh > keys_output.txt
+          ./list_keys.sh ${{ github.event.inputs.instance-name }} ${{ github.event.inputs.org-name }} ${{ github.event.inputs.repo-name }} > keys_output.txt
           cat keys_output.txt
 
       - name: Attach List Keys to Summary
@@ -38,4 +53,4 @@ jobs:
       - name: Execute Delete Keys Script
         if: ${{ github.event.inputs.action == 'delete' }}
         run: |
-          ./delete_keys.sh
+          ./delete_keys.sh ${{ github.event.inputs.instance-name }} ${{ github.event.inputs.org-name }} ${{ github.event.inputs.repo-name }}
