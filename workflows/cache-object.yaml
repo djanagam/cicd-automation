@@ -1,0 +1,41 @@
+name: Key Management
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Select action'
+        required: true
+        default: 'list'
+        type: choice
+        options:
+          - list
+          - delete
+
+jobs:
+  manage-keys:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Execute List Keys Script
+        if: ${{ github.event.inputs.action == 'list' }}
+        id: list-keys
+        run: |
+          ./list_keys.sh > keys_output.txt
+          cat keys_output.txt
+
+      - name: Attach List Keys to Summary
+        if: ${{ github.event.inputs.action == 'list' }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.readFileSync('keys_output.txt', 'utf8');
+            github.summary.addRaw('### List of Keys').addCodeBlock(output).write();
+
+      - name: Execute Delete Keys Script
+        if: ${{ github.event.inputs.action == 'delete' }}
+        run: |
+          ./delete_keys.sh
