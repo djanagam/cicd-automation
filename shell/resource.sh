@@ -1,0 +1,1 @@
+echo -e "\nCPU Info:" && cat /proc/cpuinfo && echo -e "\nMemory Info:" && free -h && echo -e "\nDisk Usage:" && df -h && echo -e "\nInode Usage:" && df -hi && echo -e "\nNetwork Stats:" && cat /proc/net/dev
