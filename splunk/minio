@@ -1,0 +1,5 @@
+mstats avg(_value) prestats=true WHERE `github_collectd` AND metric_name="minio.*" AND host="*" span=10s BY metric_name
+| eval metric_name=mvindex(split(metric_name,","),2)
+| eval disk_storage_available_gb = disk_storage_available_disk_data / (1024^3)
+| eval disk_storage_total_gb = disk_storage_total_disk_data / (1024^3)
+| eval disk_storage_used_gb = disk_storage_used_disk_data / (1024^3)
