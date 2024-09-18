@@ -1,3 +1,6 @@
+// Print the header row in CSV format
+println "Node Name,Node Label,Total Workers (Executors),Busy Workers (Executors),Idle Workers (Executors)"
+
 // Iterate through all the nodes
 Jenkins.instance.nodes.each { node ->
     def nodeName = node.getNodeName()
@@ -10,11 +13,6 @@ Jenkins.instance.nodes.each { node ->
     def busyExecutors = node.toComputer().countBusy()
     def idleExecutors = totalExecutors - busyExecutors
 
-    // Print node name, label, total executors, busy executors, and idle executors
-    println "Node Name: ${nodeName}"
-    println "Node Label: ${nodeLabel}"
-    println "Total Workers (Executors): ${totalExecutors}"
-    println "Busy Workers (Executors): ${busyExecutors}"
-    println "Idle Workers (Executors): ${idleExecutors}"
-    println "=================================="
+    // Print data in CSV format
+    println "${nodeName},${nodeLabel},${totalExecutors},${busyExecutors},${idleExecutors}"
 }
