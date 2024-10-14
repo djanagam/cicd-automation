@@ -1,9 +1,12 @@
-To extend the script with the logic for checking if a team already exists, adding users to that team, and logging the function’s actions, you can modify the function as follows:
+To avoid fetching all teams and instead directly check if a specific team exists, you can use GitHub’s API to get the team by its name (or slug) without listing all teams. This is more efficient, especially for organizations with a large number of teams.
 
-	1.	Check if a team exists: Query the GitHub API to get the list of teams in the organization and check if the specified team is already present.
-	2.	Logging: Use the existing logging configuration (logging.basicConfig) to log actions like team existence check, team creation, adding users, and permission grants.
+You can use the following endpoint to check if a specific team exists:
 
-Here’s the updated Python code:
+	•	GET /orgs/{org}/teams/{team_slug}: This endpoint allows you to directly check if a team exists by its slug.
+
+Here’s how you can modify your function to use this approach:
+
+Updated Code:
 
 import csv
 import requests
@@ -19,23 +22,29 @@ ORG_NAME = "your_organization"
 # Your personal access token with 'repo', 'admin:org' permissions
 GITHUB_TOKEN = "your_personal_access_token"
 
-# Function to create a team if it doesn't exist, add members, and set permissions
+# Function to check if a specific team exists
+def team_exists(team_slug):
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    check_team_url = f"{GITHUB_API_URL}/orgs/{ORG_NAME}/teams/{team_slug}"
+    response = requests.get(check_team_url, headers=headers)
+    
+    if response.status_code == 200:
+        return True  # Team exists
+    elif response.status_code == 404:
+        return False  # Team does not exist
+    else:
+        logging.error(f"Error checking if team exists: {response.status_code}")
+        return None
+
+# Function to create a team, add members, and set permissions
 def manage_teams_and_permissions(csv_file_path):
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
         "Accept": "application/vnd.github.v3+json"
     }
-
-    # Helper function to check if a team exists
-    def team_exists(team_name):
-        team_list_url = f"{GITHUB_API_URL}/orgs/{ORG_NAME}/teams"
-        response = requests.get(team_list_url, headers=headers)
-        if response.status_code == 200:
-            teams = response.json()
-            for team in teams:
-                if team['name'].lower() == team_name.lower():
-                    return team['slug']
-        return None
 
     # Read the CSV report file
     with open(csv_file_path, newline='') as csvfile:
@@ -49,10 +58,11 @@ def manage_teams_and_permissions(csv_file_path):
             new_branch = row['new_branch']
             pull_request_url = row['pull_request_url']
 
-            # Step 1: Check if team exists
+            # Step 1: Check if team exists using the slug
+            team_slug = team_name.lower().replace(' ', '-')
             logging.info(f"Checking if team '{team_name}' exists...")
-            team_slug = team_exists(team_name)
-            if team_slug:
+
+            if team_exists(team_slug):
                 logging.info(f"Team '{team_name}' already exists with slug '{team_slug}'.")
             else:
                 # Step 2: Create team if it doesn't exist
@@ -99,14 +109,18 @@ def manage_teams_and_permissions(csv_file_path):
 csv_file_path = 'report.csv'
 manage_teams_and_permissions(csv_file_path)
 
-Key Changes:
+Key Updates:
 
-	1.	Checking if a team exists: The team_exists() function uses GET /orgs/{org}/teams to list all teams in the organization and checks if the team already exists. It returns the team slug if the team exists, which is necessary for future API requests.
-	2.	Logging actions: Each major step—checking if a team exists, creating a team, adding users, and granting permissions—logs its status to execution.log. If an operation fails, an error message is logged with the relevant status code.
+	1.	Direct team check: The team_exists() function now queries GET /orgs/{org}/teams/{team_slug} to check if the specific team exists. This avoids fetching all teams.
+	•	If the team exists (status_code == 200), the function returns True.
+	•	If the team does not exist (status_code == 404), it returns False.
+	•	Other errors are logged, and None is returned.
+	2.	Team slug creation: The team slug is created by converting the team_name to lowercase and replacing spaces with hyphens (as GitHub commonly handles slugs in this format).
 
 Benefits:
 
-	•	Logs all actions in the existing execution.log file.
-	•	If a team already exists, it skips the creation and moves on to adding members and granting permissions.
+	•	Efficiency: Only the specific team you care about is queried instead of fetching all teams.
+	•	Scalability: This approach is more scalable for organizations with a large number of teams.
+	•	Logging: Logs important actions such as team existence checks, team creation, user addition, and permission grants to execution.log.
 
-This ensures that the process is robust, and all actions are well-logged for tracking purposes.
+This method will perform efficiently even with many teams in your organization. Let me know if you need any more adjustments!
