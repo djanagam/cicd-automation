@@ -1,0 +1,9 @@
+index=<your_index> sourcetype=<your_sourcetype> earliest=-4h@h latest=now
+| streamstats count as row_number
+| search "your_specific_string"
+| eval target_row=row_number
+| append [ search index=<your_index> sourcetype=<your_sourcetype> earliest=-4h@h latest=now
+           | streamstats count as row_number
+           | eval target_row=null ]
+| where row_number < target_row
+| tail 30
