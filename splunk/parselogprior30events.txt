@@ -7,3 +7,23 @@ index=<your_index> sourcetype=<your_sourcetype> earliest=-4h@h latest=now
            | eval target_row=null ]
 | where row_number < target_row
 | tail 30
+
+
+
+index=<your_index> sourcetype=<your_sourcetype> earliest=-4h@h latest=now
+| streamstats count as event_count
+| eval is_target=if(searchmatch("your_specific_string"), 1, 0)
+| search is_target=1
+| head 1
+| table event_count
+| appendcols [ search index=<your_index> sourcetype=<your_sourcetype> earliest=-4h@h latest=now
+               | streamstats count as event_count
+               | where event_count < [search index=<your_index> sourcetype=<your_sourcetype> earliest=-4h@h latest=now
+                                     | streamstats count as event_count
+                                     | eval is_target=if(searchmatch("your_specific_string"), 1, 0)
+                                     | search is_target=1
+                                     | head 1 
+                                     | table event_count
+                                     ]
+               | tail 30
+]
