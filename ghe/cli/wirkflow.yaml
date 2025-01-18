@@ -1,0 +1,30 @@
+name: Run GitHub CLI Utility
+
+on:
+  workflow_dispatch:
+    inputs:
+      org:
+        description: "GitHub Organization Name"
+        required: true
+      command:
+        description: "Command to run (list-workflows, list-cron-workflows, in-progress)"
+        required: true
+
+jobs:
+  run-gh-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up GitHub CLI
+        uses: gh-cli/install@v2
+
+      - name: Install custom CLI extension
+        run: |
+          mkdir -p ~/.local/share/gh/extensions
+          gh extension install ./gh-org-workflows
+
+      - name: Run CLI Command
+        run: |
+          gh org-workflows --org "${{ github.event.inputs.org }}" --${{ github.event.inputs.command }}
