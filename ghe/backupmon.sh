@@ -12,13 +12,20 @@ PAYLOAD_FILE="/tmp/backup_failure_payload.json"
 # Function to send API notification
 notify_failure() {
     local log_file=$1
+    local log_content
+
+    # Read the log file content and escape for JSON
+    log_content=$(<"$log_file")
+    log_content=$(echo "$log_content" | jq -R -s '.')
+
     echo "$(date): Preparing failure payload for log file: $log_file"
     cat <<EOF > $PAYLOAD_FILE
 {
   "event": "ghe-backup-failure",
   "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
   "log_file": "$log_file",
-  "error": "$ERROR_STRING"
+  "error": "$ERROR_STRING",
+  "description": $log_content
 }
 EOF
 
