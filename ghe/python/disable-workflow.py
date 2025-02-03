@@ -1,8 +1,15 @@
 import requests
 import yaml
+import argparse
 
-# GitHub API Token (Ensure it has 'workflow' scope)
-GITHUB_TOKEN = "your_github_token"
+# Parse command-line arguments
+parser = argparse.ArgumentParser(description="Disable GitHub workflows with invalid runner labels.")
+parser.add_argument("--token", required=True, help="GitHub API token with workflow scope")
+parser.add_argument("--repos-file", default="repos.txt", help="File containing list of repositories (default: repos.txt)")
+args = parser.parse_args()
+
+GITHUB_TOKEN = args.token
+REPOS_FILE = args.repos_file
 
 # List of invalid runner labels
 INVALID_RUNNER_LABELS = {"invalid-runner-1", "invalid-runner-2", "deprecated-runner"}
@@ -13,7 +20,7 @@ headers = {
 }
 
 # Read repositories from input file
-with open("repos.txt", "r") as f:
+with open(REPOS_FILE, "r") as f:
     repositories = [line.strip() for line in f if line.strip()]
 
 for repo in repositories:
