@@ -1,14 +1,20 @@
 import requests
 import yaml
 import argparse
+import base64
+
+# Default GitHub URL (can be overridden via CLI)
+DEFAULT_GITHUB_URL = "https://github.company.com"
 
 # Parse command-line arguments
-parser = argparse.ArgumentParser(description="Disable GitHub workflows with invalid runner labels.")
+parser = argparse.ArgumentParser(description="Disable GitHub workflows with invalid runner labels on self-hosted GitHub.")
 parser.add_argument("--token", required=True, help="GitHub API token with workflow scope")
+parser.add_argument("--github-url", default=DEFAULT_GITHUB_URL, help=f"Base URL of self-hosted GitHub (default: {DEFAULT_GITHUB_URL})")
 parser.add_argument("--repos-file", default="repos.txt", help="File containing list of repositories (default: repos.txt)")
 args = parser.parse_args()
 
 GITHUB_TOKEN = args.token
+GITHUB_URL = args.github_url.rstrip("/")  # Remove trailing slash if present
 REPOS_FILE = args.repos_file
 
 # List of invalid runner labels
@@ -27,7 +33,7 @@ for repo in repositories:
     print(f"\nProcessing repository: {repo}")
     
     # Get all workflows in the repository
-    workflow_url = f"https://api.github.com/repos/{repo}/actions/workflows"
+    workflow_url = f"{GITHUB_URL}/api/v3/repos/{repo}/actions/workflows"
     response = requests.get(workflow_url, headers=headers)
 
     if response.status_code != 200:
@@ -39,14 +45,15 @@ for repo in repositories:
     for workflow in workflows:
         workflow_id = workflow["id"]
         workflow_name = workflow["name"]
-        workflow_yaml_path = workflow["path"]  # Path to the workflow YAML file
+        workflow_yaml_url = f"{GITHUB_URL}/api/v3/repos/{repo}/contents/{workflow['path']}"
 
-        # Get raw YAML content
-        raw_yaml_url = f"https://raw.githubusercontent.com/{repo}/main/{workflow_yaml_path}"
-        yaml_response = requests.get(raw_yaml_url, headers=headers)
+        # Get workflow YAML content using GitHub API
+        yaml_response = requests.get(workflow_yaml_url, headers=headers)
 
         if yaml_response.status_code == 200:
-            workflow_content = yaml.safe_load(yaml_response.text)
+            workflow_content_encoded = yaml_response.json().get("content", "")
+            workflow_content_decoded = base64.b64decode(workflow_content_encoded).decode("utf-8")
+            workflow_content = yaml.safe_load(workflow_content_decoded)
 
             # Extract runner labels if available
             runner_labels = set()
@@ -63,7 +70,7 @@ for repo in repositories:
                 print(f"⚠️ Disabling workflow '{workflow_name}' in {repo} due to invalid runner labels: {runner_labels & INVALID_RUNNER_LABELS}")
 
                 # Disable the workflow
-                disable_url = f"https://api.github.com/repos/{repo}/actions/workflows/{workflow_id}/disable"
+                disable_url = f"{GITHUB_URL}/api/v3/repos/{repo}/actions/workflows/{workflow_id}/disable"
                 disable_response = requests.put(disable_url, headers=headers)
 
                 if disable_response.status_code == 204:
