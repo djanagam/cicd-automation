@@ -1,1 +1,1 @@
-kubectl get resourcequotas -A -o custom-columns="NAMESPACE:.metadata.namespace,NAME:.metadata.name,CPU:.status.hard.cpu,MEMORY:.status.hard.memory,PODS:.status.hard.pods,STORAGE:.status.hard['requests.storage']" --no-headers | tr -s ' ' ','
+kubectl describe quota | awk '/Name:/ {name=$2} /Hard/ {getline; while ($0 !~ /^$/) {if ($1 ~ /cpu|memory|requests.storage/) printf "%s,%s,%s\n", name, $1, $2; getline}}'
