@@ -1,0 +1,3 @@
+index=your_index "exceeded quota:"  
+| rex field=_raw "exceeded quota:\s*(?<instance>[^,]+),\s*requested:\s*(?<requested>limits\.cpu=\d+),\s*used:\s*(?<used>limits\.cpu=\d+),\s*limited:\s*(?<limited>limits\.cpu=\d+)"  
+| table instance, requested, used, limited  
