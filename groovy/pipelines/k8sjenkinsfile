@@ -1,0 +1,97 @@
+pipeline {
+    agent any
+
+    parameters {
+        choice(name: 'NAMESPACE', choices: ['namespace-1', 'namespace-2', 'namespace-3', 'namespace-4'], description: 'Select the Kubernetes Namespace')
+        string(name: 'HELM_RELEASE', defaultValue: 'my-release', description: 'Enter Helm Release Name')
+        booleanParam(name: 'DEPLOY_HELM', defaultValue: true, description: 'Deploy using Helm?')
+    }
+
+    environment {
+        // Define the namespace-to-cluster mapping
+        NAMESPACE_CLUSTER_MAP = """
+            {
+                "namespace-1": {"api": "https://api.cluster1.example.com", "cluster": "cluster-1"},
+                "namespace-2": {"api": "https://api.cluster2.example.com", "cluster": "cluster-2"},
+                "namespace-3": {"api": "https://api.cluster3.example.com", "cluster": "cluster-3"},
+                "namespace-4": {"api": "https://api.cluster4.example.com", "cluster": "cluster-4"}
+            }
+        """
+    }
+
+    stages {
+        stage('Determine Cluster from Namespace') {
+            steps {
+                script {
+                    // Parse the JSON mapping
+                    def namespaceClusterMap = readJSON text: env.NAMESPACE_CLUSTER_MAP
+
+                    // Retrieve the cluster info based on the selected namespace
+                    def clusterInfo = namespaceClusterMap[params.NAMESPACE]
+
+                    if (clusterInfo) {
+                        env.PKS_API = clusterInfo.api
+                        env.PKS_CLUSTER_NAME = clusterInfo.cluster
+                        currentBuild.displayName = "Namespace: ${params.NAMESPACE} | Cluster: ${env.PKS_CLUSTER_NAME}"
+                    } else {
+                        error "No cluster mapping found for namespace: ${params.NAMESPACE}"
+                    }
+                }
+            }
+        }
+
+        stage('Authenticate with PKS') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'pks-credentials', usernameVariable: 'PKS_USER', passwordVariable: 'PKS_PASSWORD')]) {
+                        sh """
+                            pks login -a ${env.PKS_API} -u $PKS_USER -p $PKS_PASSWORD -k
+                            pks get-credentials ${env.PKS_CLUSTER_NAME}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Configure Kubernetes Context') {
+            steps {
+                script {
+                    sh """
+                        kubectl config set-context --current --namespace=${params.NAMESPACE}
+                    """
+                }
+            }
+        }
+
+        stage('Run kubectl commands') {
+            steps {
+                script {
+                    sh """
+                        kubectl get pods -n ${params.NAMESPACE}
+                        kubectl get services -n ${params.NAMESPACE}
+                    """
+                }
+            }
+        }
+
+        stage('Run Helm Commands') {
+            when {
+                expression { params.DEPLOY_HELM }
+            }
+            steps {
+                script {
+                    sh """
+                        helm list -n ${params.NAMESPACE}
+                        helm upgrade --install ${params.HELM_RELEASE} my-chart -n ${params.NAMESPACE}
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
