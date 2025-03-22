@@ -2,20 +2,22 @@ pipeline {
     agent any
 
     stages {
-        stage('Create XML File') {
+        stage('Create Malformed XML File') {
             steps {
                 script {
-                    def xmlContent = """<?xml version="1.0" encoding="UTF-8"?>
+                    def invalidXmlContent = """  
+                    <?xml version="1.0" encoding="UTF-8"?>
                     <root>
                         <message>Hello, Jenkins!</message>
                     </root>
-                    """
-                    writeFile file: 'sample.xml', text: xmlContent
+                    """  // Leading spaces before XML declaration
+                    
+                    writeFile file: 'invalid.xml', text: invalidXmlContent
                 }
             }
         }
 
-        stage('Parse XML with Java') {
+        stage('Parse Malformed XML') {
             steps {
                 script {
                     def javaCode = '''
@@ -28,7 +30,7 @@ pipeline {
                     public class XMLParser {
                         public static void main(String[] args) {
                             try {
-                                File xmlFile = new File("sample.xml");
+                                File xmlFile = new File("invalid.xml");
                                 DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                                 DocumentBuilder builder = factory.newDocumentBuilder();
                                 Document doc = builder.parse(xmlFile);
